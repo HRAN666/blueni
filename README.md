@@ -1,3 +1,3 @@
-# bluen
+# blueni
 a test repository
 testing more
