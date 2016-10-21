@@ -1,3 +1,2 @@
 # blueni
-a test repository
-testing more
+平时做的一些小玩意，放这以后可以看看
