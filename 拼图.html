@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8">
+	<title>Document</title>
+	<style type="text/css">
+		#box{width: 800px;height:800px;border: 10px outset #999;margin:100px auto;position: relative;}
+		#box div{border: 1px solid #999999;position: absolute;width:198px;height:198px;}
+		button{position: absolute;left:50%;margin-left:-520px;top:100px;width: 100px;height: 30px;color:red;cursor: pointer;}
+	</style>
+</head>
+<body>
+	<div id="box"></div>
+
+	<script type="text/javascript">
+		window.onload=function(){
+
+			var pics = [
+				'http://b.hiphotos.baidu.com/image/pic/item/10dfa9ec8a1363272bc51737938fa0ec08fac78e.jpg' ,
+				'http://image1.buy.ccb.com/images/44614225/1410452874809_4.jpg' ,
+				'http://e.hiphotos.baidu.com/image/pic/item/7e3e6709c93d70cf8f7a9600fadcd100baa12b3e.jpg' ,
+				'http://image91.360doc.com/DownloadImg/2015/11/1123/61416818_1.jpg' ,
+				'http://img.zcool.cn/community/033b5c555acae616ac72581788ff348.jpg' ,
+				'http://s2.doyo.cn/img/4f/e4/13859e9e78536e000042.jpg'
+			];
+
+			function randomPic(){
+				return pics[ Math.floor( Math.random() * pics.length ) ];
+			}
+
+			var WIDTH = 4;	// 横向格子数
+			var HEIGHT = 4;	// 纵向格子数
+			var game = {
+
+				blocks : [],	// 格子数组
+
+				emptyBlock : [ WIDTH - 1 , HEIGHT - 1 ],	// 空白处格子坐标
+
+				img : randomPic(),	// 图片
+
+				init : function( level ){	// 初始化时加个等级可以把图片打得更乱
+					this.blocks = [];
+					level = +level || 1;
+					var _this = this;
+					for(var i=0;i<WIDTH*HEIGHT-1;i++){
+						this.createBlock( i % WIDTH , Math.floor( i / WIDTH ) , i );
+					}
+					// 让人看到初始化的时候
+					var num = 0;
+					function _keepMove(){
+						_this.randomMove(function(){
+							num++;
+							if( num == level * level * 5 )return;
+							_keepMove();
+						});
+					}
+					_keepMove();
+				},
+
+				// 建格子
+				createBlock : function( x , y , index ){
+					var box = document.getElementById( 'box' );
+					var elem = document.createElement( 'div' );
+					var _this = this;
+					box.appendChild( elem );
+					var w = elem.offsetWidth;
+					var h = elem.offsetHeight;
+					elem.style.left = x * w + 'px';
+					elem.style.top = y * h + 'px';
+					if( this.img ){
+						elem.style.background = 'url(' + this.img + ') no-repeat -' + x * w + 'px -' + y * h + 'px';
+					}
+					var block = new Block( elem , x , y , index );
+					this.blocks.push( block );
+					elem.onclick = function(){
+						if( !_this.blockCanMove( block ) )return;
+						_this.move( block );
+						if( _this.check() ){
+							alert( '你赢了!!!' );
+						}
+					}
+				},
+
+				// 随机移动
+				randomMove : function( cb ){
+					var blocks = this.findAroundBlocks();
+					this.move( blocks[ Math.floor( Math.random() * blocks.length )] , cb );
+				},
+
+				// 移动
+				move : function( block , cb ){
+					var emptyBlock = this.emptyBlock;
+					var x = block.x;
+					var y = block.y;
+					block.move( emptyBlock[0] , emptyBlock[1] , cb );
+					this.emptyBlock = [ x , y ];
+				},
+
+				// 找指定格子周边方块
+				findAroundBlocks : function( x , y ){
+					if( !arguments.length ){
+						x = this.emptyBlock[0];
+						y = this.emptyBlock[1];
+					}
+					var _blocks = [];
+					var blocks = this.blocks;
+					var block;
+					for(var i=0;i<blocks.length;i++){
+						block = blocks[i];
+						if( Math.abs( block.x - x ) == 1 && block.y == y ||
+							Math.abs( block.y - y ) == 1 && block.x == x ){
+							_blocks.push( block );
+						}
+					}
+					return _blocks;
+				},
+
+				// 检查
+				check : function(){
+					var blocks = this.blocks;
+					for(var i=0;i<blocks.length;i++){
+						if( !blocks[i].check() ){
+							return false;
+						}
+					}
+					return true;
+				},
+
+				// 格子可以移动
+				blockCanMove : function( block ){
+					var x = this.emptyBlock[0];
+					var y = this.emptyBlock[1];
+					return Math.abs( block.x - x ) == 1 && block.y == y ||
+							Math.abs( block.y - y ) == 1 && block.x == x;
+				}
+
+			};
+
+			// 格子对象构造函数
+			function Block( elem , x , y , index ){
+				this.x = x;
+				this.y = y;
+				this.index = index;
+				this.elem = elem;
+			}
+
+			Block.prototype = {
+
+				// 移动 
+				move : function( x , y , cb ){
+					var elem = this.elem;
+					var width = elem.offsetWidth;
+					var height = elem.offsetHeight;
+					_move( elem , { left : x * width , top : y * height } , cb );
+					this.x = x;
+					this.y = y;
+				},
+
+				// 格子移到了正确的位置上
+				check : function(){
+					return this.index % WIDTH == this.x && Math.floor( this.index / WIDTH ) == this.y;
+				}
+
+			};
+
+			// 慢慢移动效果好一点
+			function _move( elem , position , cb ){
+				var endX = position.left;
+				var endY = position.top;
+				var posX = elem.offsetLeft;
+				var posY = elem.offsetTop;
+				var speedX = speedY = 1;
+				var xIsArrived = yIsArrived = false;
+				clearInterval( elem.timer );
+				elem.timer = setInterval(function(){
+					speedX = ( endX - posX ) / 4;
+					speedY = ( endY - posY ) / 4;
+					speedX = speedX > 0 ? Math.ceil( speedX ) : Math.floor( speedX );
+					speedY = speedY > 0 ? Math.ceil( speedY ) : Math.floor( speedY );
+					if( !xIsArrived ){
+						posX += speedX;	
+					}
+					if( !yIsArrived ){
+						posY += speedY;	
+					}	
+					xIsArrived = posX == endX;
+					yIsArrived = posY == endY;		
+					elem.style.left = posX + 'px';
+					elem.style.top = posY + 'px';		
+					if( posX == endX && posY == endY ){						
+						clearInterval( elem.timer );
+						cb && cb();
+					}
+				} , 1000 / 35 );
+			}
+
+			// game start
+			game.init( 4 );
+			
+
+		}
+	</script>
+</body>
+</html>

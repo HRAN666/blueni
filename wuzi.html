@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+	<title>五子棋</title>
+	<style type="text/css">
+	canvas{position: absolute;left:50%;margin-left:-420px;top:50%;margin-top:-420px;}
+	</style>
+</head>
+
+<body>
+
+<canvas id="canvas" width="800" height="800"></canvas>
+	
+<script type="text/javascript">
+	
+var c = document.getElementById( 'canvas' );
+var context = c.getContext( '2d' );
+var BLOCKS = 20;
+
+var gobang = {
+
+	// 棋盘
+	coor : [],
+
+	// 当前下棋方
+	now : 1,
+
+	// 初始化
+	init : function( which ){
+		this.now = +which || 1;
+		var coor = this.coor , coor1;
+		for(var i=0;i<BLOCKS;i++){
+			coor1 = coor[i] = [];
+			for(var j=0;j<BLOCKS;j++){
+				coor1.push( 0 );
+			}
+		}
+		console.log(coor1,coor);
+		this.draw();
+		var _this = this;
+		canvas.onclick = function( ev ){
+			var x = ev.pageX - canvas.offsetLeft;
+			var y = ev.pageY - canvas.offsetTop;
+			_this.pushPiece( Math.round( ( x - 20 ) / 40 ) , Math.round( ( y - 20 ) / 40 ) );
+		}
+	},
+
+	// 画当前棋局
+	draw : function(){
+		var coor = this.coor;
+		context.clearRect( 0 , 0 , canvas.width , canvas.height );
+		context.save();
+		context.translate( 20 , 20 );
+		// 画棋盘
+		for(var i=0;i<20;i++){
+			context.beginPath();
+			context.moveTo( 0 , i * 40 );
+			context.lineTo( 760 , i * 40 );
+			context.stroke();
+			context.beginPath();
+			context.moveTo( i * 40 , 0 );
+			context.lineTo( i * 40 , 760 );
+			context.stroke();
+		}
+		// 填充棋子
+		var block;
+		for(var i=0;i<BLOCKS;i++){
+			for(var j=0;j<BLOCKS;j++){
+				if( coor[i][j] ){
+					round( j * 40 , i * 40 , coor[i][j] );
+				}
+			}
+		}
+		context.restore();
+		function round( x , y , color ){
+			context.fillStyle = color == 1 ? '#ffffff' : '#000000';
+			context.beginPath();
+			context.moveTo( x , y );
+			context.arc( x , y , 19 , 0 , Math.PI * 2, false );
+			context.stroke();
+			context.fill();
+		}
+	},
+
+	// 落子
+	pushPiece : function( x , y ){
+		if( this.coor[y][x] )return;
+		this.coor[y][x] = this.now;
+		this.draw();
+		this.check( x , y );
+		this.now = this.now == 1 ? 2 : 1;
+	},
+
+	// 检查落子周边是否有五子连珠
+	check : function( x , y ){
+		var arr , temp = [];
+		var coor = this.coor;
+		var which = this.now;
+		// 横向检查
+		arr = coor[y];
+		for(var i=Math.max( 0 , x - 4 );i<Math.min( BLOCKS , x + 5 );i++){
+			temp.push( arr[i] );
+		}
+		if( seriesCheck( temp , which ) ){
+			return this.win();
+		}
+
+		// 纵向检查
+		temp = [];
+		for(var i=Math.max( 0 , y - 4 );i<Math.min( BLOCKS , y + 5 );i++){
+			temp.push( coor[i][x] );
+		}
+		if( seriesCheck( temp , which ) ){
+			return this.win();
+		}
+
+		// 撇向检查
+		temp = [];
+		for(var j=y + 4,i=Math.max( 0 , x - 4 );i<Math.min( BLOCKS , x + 5 );i++,j--){
+			coor[j] && ( coor[j][i] !== undefined ) && temp.push( coor[j][i] );
+		}
+		if( seriesCheck( temp , which ) ){
+			return this.win();
+		}
+
+		// 捺向检查 
+		temp = [];
+		for(var j=y - 4,i=Math.max( 0 , x - 4 );i<Math.min( BLOCKS , x + 5 );i++,j++){
+			coor[j] && ( coor[j][i] !== undefined ) && temp.push( coor[j][i] );
+		}
+		if( seriesCheck( temp , which ) ){
+			return this.win();
+		}
+	},
+
+	// 赢了
+	win : function(){
+		alert(  this.now == 1 ? '白' : '黑'  + '方胜利了！' );
+	}
+
+};
+
+// 检测五子是否连珠
+function seriesCheck( arr , which ){
+	var series = 0;
+	for(var i=0;i<arr.length;i++){
+		if( arr[i] === which ){
+			series++;	
+		}else{
+			series = 0;
+		}
+		if( series == 5 ){
+			return true;
+		}
+	}
+	return false;
+}
+
+gobang.init();
+</script>
+
+</body>
+</html>

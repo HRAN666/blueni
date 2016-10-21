@@ -1,0 +1,125 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>canvas 时钟</title>
+	<style type="text/css">
+	canvas{
+		width:500px;
+		height:500px;
+		position: absolute;
+		left:50%;
+		top:50%;
+		margin-left:-250px;
+		margin-top:-250px;
+		z-index: 1;
+	}
+	#canvas2{
+		z-index: 2;
+	}
+	</style>
+</head>
+<body>
+
+	<canvas id="canvas1" width="500" height="500"></canvas>
+	<canvas id="canvas2" width="500" height="500"></canvas>
+
+	<script type="text/javascript">
+
+	var clock = {
+
+		clock : document.getElementById( 'canvas2' ),
+
+		point : document.getElementById( 'canvas1' ),
+
+		center : 250,
+
+		init : function(){
+			var context = this.clock.getContext( '2d' );
+			context.fillStyle = '#ff9953';
+			round( 250 , 250 , 8 , context );
+			context.fill()
+			context.strokeStyle = '#336699';
+			round( 250 , 250 , 250 , context );
+			round( 250 , 250 , 247 , context );
+			context.strokeStyle = '#996633';
+			context.lineWidth = 2;
+			round( 250 , 250 , 248 , context );
+			context.strokeStyle = '#333';
+			context.lineCap = 'round';
+			context.font = '30px/30px arial';
+			var sin , cos;
+			for(var i=0;i<60;i++){
+				context.beginPath();
+				context.lineWidth = 2;
+				sin = Math.sin( Math.PI - Math.PI / 30 * i );
+				cos = Math.cos( Math.PI - Math.PI / 30 * i );
+				context.moveTo( 250 + 246 * sin , 250 + 246 * cos );
+				context.lineTo( 250 + ( 230 - ( i % 15 ? 0 : 6 ) ) * sin , 250 + ( 230 - ( i % 15 ? 0 : 6 ) ) * cos );
+				if( !( i % 5 ) ){
+					context.lineWidth = 4;
+					context.fillText( i / 5 || 12 , 240 + ( i == 0 ? -10 : 0 ) + 210 * sin , 260 + 210 * cos );
+				}
+				context.stroke();
+			}
+			var _this = this;
+			this.draw();
+			setInterval(function(){
+				_this.draw();
+			} , 50 );
+			return this;
+		},
+
+		draw : function(){
+			var context = this.point.getContext( '2d' );
+			context.clearRect( 0 , 0 , 500 , 500 );
+			context.restore();
+			var time = this.getTime();
+			var second = time.second * 12 + time.ms / 80;
+			var minute = time.minute * 12 + time.second / 12;
+			var hour = time.hour * 60 + time.minute;
+			context.strokeStyle = '#333';
+			context.lineCap="round";
+			context.miterLimit=25;
+			drawPoint( hour , 14 , '#444' );
+			drawPoint( minute , 8 , '#963' );
+			drawPoint( second , 6 , '#f39' );
+			context.save();
+			function drawPoint( type , lineWidth , style ){
+				context.beginPath();		
+				context.lineWidth = lineWidth;
+				context.strokeStyle = style;
+				var sin = Math.sin( Math.PI - Math.PI / 360 * type );
+				var cos = Math.cos( Math.PI - Math.PI / 360 * type );
+				context.moveTo( 250 + ( 100 / -lineWidth - 3 ) * sin , 250 + ( 100 / -lineWidth - 3 ) * cos );
+				context.lineTo( 250 + ( 1200 / lineWidth ) * sin , 250 + ( 1200 / lineWidth) * cos );
+				context.stroke();
+			}
+
+		},
+
+		getTime : function(){
+			var time = new Date();
+			return {
+				hour : time.getHours() % 12,
+				minute : time.getMinutes(),
+				second : time.getSeconds(),
+				ms : time.getMilliseconds()
+			};
+		}
+
+	};
+
+	clock.init();
+
+
+	function round( x , y , radio , context ){
+		context.beginPath();
+		context.arc( x , y , radio , 0 , Math.PI * 2 , false );
+		context.stroke();
+	}
+
+
+	</script>
+
+</body>
+</html>
