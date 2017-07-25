@@ -1,0 +1,224 @@
+<html>
+<head>
+    <title>game 24</title>
+    <style>
+        btn{ background: #ccc; padding: .2em .5em; cursor: pointer;}
+    </style>
+</head>
+
+<body>
+
+    <div id="game">
+
+        <h5>用下面4个数进行运算使最终结果为24</h5>
+        <hr />
+
+        <span></span>
+        <span></span>
+        <span></span>
+        <span></span>
+        <hr />
+
+        <btn id="reset-btn">重置</btn>
+        <btn id="show-btn">获取结果</btn>
+        <p id="result"></p>
+    </div>
+
+
+
+<script type="text/javascript">
+
+const getExpression = ( n1, n2, type, reverse ) => {
+    switch( type ){
+        case 0:
+            return [ n2, n1, 1, '-' ]
+        case 1:
+            return reverse ? [ n1, n2, 1, '-' ] : [ n1, n2, 0, '+' ]
+        case 2:
+            return [ n2, n1, 3, '/' ]
+        default:
+            return reverse ? [ n1, n2, 3, '/' ] : [ n1, n2, 2, '*' ]
+    }
+}
+
+const calc = ( n1, n2, type = 0 ) => {
+    n1 = +n1 || 0
+    n2 = +n2 || 0
+    switch( type ){
+        case 0:
+            return n1 + n2
+        case 1:
+            return n1 - n2
+        case 2:
+            return n1 * n2
+    }
+    return n1 / n2
+}
+
+const reCalc = ( res, max1 = 99, max2 = 99 ) => {
+    let n1, n2, type, types;
+    let reverse = false
+    let nums = Array.from({ length: max1 })
+        nums = nums.map( ( v, index ) => index + 1 )
+                    .sort( v => Math.random() - .5 )
+                    .reverse()
+                    .sort( v => Math.random() - .5 )
+
+    const _resetTypes = () => {
+        return [ 0, 1, 2, 3 ].sort( v => Math.random() - .5 )
+    }
+
+    do{
+        n1 = nums.pop()
+        types = _resetTypes()
+        reverse = false
+        while( true ){
+            type = types.pop()
+            n2 = reverse ? calc( n1, res, type ) : calc( res, n1, type )
+            if( Math.round( n2 ) == n2 && n2 > 0 && n2 < max2 ){
+                return getExpression( n1, n2, type, reverse )
+            }
+            if( !types.length ){
+                if( reverse ){
+                    break
+                }
+                types = _resetTypes()
+                reverse = true
+            }
+        }
+    } while( nums.length )
+}
+
+const game24 = () => {
+    let expressions = []
+    let units = []
+    let calcTo = 24
+    let calcTo2 = null
+    let exp
+    let times = 10000
+
+    const _clearUnits = () => {
+        units = []
+        expressions = []
+        calcTo = 24
+        calcTo2 = null
+    }
+
+    while( times-- ){
+        if( units.length == 2 ){
+            exp = reCalc( calcTo, 10, 10 )
+            if( !exp ){
+                _clearUnits()
+                continue
+            }
+            units.push( exp[0], exp[1] )
+            expressions.push( exp )
+            break;
+        }
+        if( calcTo2 !== null ){
+            exp = reCalc( calcTo, 10, 10 )
+            if( !exp ){
+                _clearUnits()
+                continue
+            }
+            units.push( exp[0], exp[1] )
+            expressions.push( exp )
+
+            exp = reCalc( calcTo2, 10, 10 )
+            if( !exp ){
+                _clearUnits()
+                continue
+            }
+            units.push( exp[0], exp[1] )
+            expressions.push( exp )
+            break;
+        }
+        if( units.length ){
+            exp = reCalc( calcTo, 10 )
+        }else{
+            exp = reCalc( calcTo, 60, 60 )
+        }
+        if( !exp ){
+            _clearUnits()
+            continue
+        }
+        if( exp[0] < 10 ){
+            calcTo = exp[1]
+            units.push( exp[0] )
+        }else if( exp[1] < 10 ){
+            calcTo = exp[0]
+            units.push( exp[1] )
+        }else{
+            calcTo = exp[0]
+            calcTo2 = exp[1]
+        }
+        expressions.push( exp )
+    }
+
+    expressions = expressions.reverse()
+    return {
+        units,
+        expressions
+    }
+}
+
+
+
+////////////////////////////
+
+
+
+const $ = ( selector ) => {
+    return document.querySelector( selector )
+}
+
+const game = {
+
+
+    nums: $( '#game' ).getElementsByTagName( 'span' ),
+    result: $( '#result' ),
+    resetBtn: $( '#reset-btn'),
+    showBtn: $( '#show-btn'),
+
+    data: null,
+
+    init(){
+        this.resetBtn.onclick = () => {
+            this.reset()
+        }
+
+        this.showBtn.onclick = () => {
+            this.showResult()
+        }
+
+        this.reset()
+    },
+
+    reset(){
+        let data = this.data = game24()
+        let units = data.units.sort( v => Math.random() - .5 )
+        this.result.innerHTML = ''
+        let elems = this.nums
+        for( let i=0;i<elems.length;i++ ){
+            elems[i].innerHTML = units[i]
+        }
+    },
+
+    showResult(){
+        let expressions = this.data.expressions
+        let html = ''
+        expressions.forEach( exp => {
+            html += `${exp[0]} ${exp[3]} ${exp[1]} = ${calc( ...exp )}<br />`
+        })
+        this.result.innerHTML = html
+    },
+
+}
+
+game.init()
+
+
+
+</script>
+</body>
+</html>
